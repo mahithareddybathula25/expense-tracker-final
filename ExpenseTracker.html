@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Expense tracker</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+
+    <!-- Bootstrap CDN -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.4/dist/jquery.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
+
+    <style>
+        input[type='submit'], button, [aria-label] {
+            cursor: pointer;
+        }
+        #formitem {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container p-3 my-3 bg-primary text-white">
+        <h2>Expense tracker</h2>
+        <form action="javascript:void(0);" method="POST" onsubmit="app.Add()">
+            <input type="text" id="add-name" placeholder="New Expense" class="form-control my-2" required>
+            <input type="number" id="add-cost" placeholder="Cost (₹)" class="form-control my-2" min="0" step="0.01" required>
+            <input type="submit" value="Add" class="btn btn-light">
+        </form>
+
+        <!-- Edit Form -->
+        <div id="formitem" role="aria-hidden">
+            <form action="javascript:void(0);" method="POST" id="saveEdit">
+                <input type="text" id="edit-name" class="form-control my-2" required>
+                <input type="number" id="edit-cost" class="form-control my-2" min="0" step="0.01" required>
+                <input type="submit" value="Save" class="btn btn-success">
+                <a onclick="CloseInput()" aria-label="Close" class="btn btn-link text-white ml-2">&#10006;</a>
+            </form>
+        </div>
+        <p id="counter" class="mt-2"></p>
+        <p id="total-cost" class="mt-1 font-weight-bold"></p>
+    </div>
+
+    <div class="container">
+        <!-- Menu Table -->
+        <table class="table table-bordered table-striped">
+            <thead>
+                <tr>
+                    <th>Item</th>
+                    <th>Cost (₹)</th>
+                    <th>Edit</th>
+                    <th>Delete</th>
+                </tr>
+            </thead>
+            <tbody id="items"></tbody>
+        </table>
+    </div>
+
+    <script>
+        var app = new function() {
+            this.el = document.getElementById('items');
+            // Now each item is an object with name and cost
+            this.items = [
+                {name: 'food', cost: 100},
+                {name: 'shopping', cost: 250}
+            ];
+
+            this.Count = function(data) {
+                var el = document.getElementById('counter');
+                var name = 'item';
+                if (data) {
+                    name = data > 1 ? 'items' : 'item';
+                    el.innerHTML = data + ' ' + name;
+                } else {
+                    el.innerHTML = 'No ' + name;
+                }
+            };
+
+            this.TotalCost = function() {
+                let total = this.items.reduce((sum, item) => sum + Number(item.cost), 0);
+                document.getElementById('total-cost').innerHTML = 'Total Cost: ₹' + total.toFixed(2);
+            }
+
+            this.FetchAll = function() {
+                var data = '';
+                if (this.items.length > 0) {
+                    for (let i = 0; i < this.items.length; i++) {
+                        data += '<tr>';
+                        data += '<td>' + this.items[i].name + '</td>';
+                        data += '<td>₹' + Number(this.items[i].cost).toFixed(2) + '</td>';
+                        data += '<td><button class="btn btn-primary btn-sm" onclick="app.Edit(' + i + ')">Edit</button></td>';
+                        data += '<td><button class="btn btn-danger btn-sm" onclick="app.Delete(' + i + ')">Delete</button></td>';
+                        data += '</tr>';
+                    }
+                }
+                this.Count(this.items.length);
+                this.TotalCost();
+                return this.el.innerHTML = data;
+            };
+
+            this.Add = function() {
+                var nameEl = document.getElementById('add-name');
+                var costEl = document.getElementById('add-cost');
+                var name = nameEl.value.trim();
+                var cost = costEl.value.trim();
+
+                if (name && cost && !isNaN(cost) && cost >= 0) {
+                    this.items.push({name: name, cost: parseFloat(cost)});
+                    nameEl.value = '';
+                    costEl.value = '';
+                    this.FetchAll();
+                }
+            };
+
+            this.Edit = function(item) {
+                var nameEl = document.getElementById('edit-name');
+                var costEl = document.getElementById('edit-cost');
+
+                nameEl.value = this.items[item].name;
+                costEl.value = this.items[item].cost;
+                document.getElementById('formitem').style.display = 'block';
+
+                var self = this;
+                document.getElementById('saveEdit').onsubmit = function() {
+                    var newName = nameEl.value.trim();
+                    var newCost = costEl.value.trim();
+
+                    if (newName && newCost && !isNaN(newCost) && newCost >= 0) {
+                        self.items.splice(item, 1, {name: newName, cost: parseFloat(newCost)});
+                        self.FetchAll();
+                        CloseInput();
+                    }
+                }
+            };
+
+            this.Delete = function(item) {
+                this.items.splice(item, 1);
+                this.FetchAll();
+            };
+        }
+
+        function CloseInput() {
+            document.getElementById('formitem').style.display = 'none';
+        }
+
+        app.FetchAll();
+    </script>
+</body>
+</html>
